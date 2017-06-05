@@ -319,83 +319,84 @@ public:
 private:
 	hashNode** ref;
 	hashTable::size_type offset;
-}; // End Iterator
+};
 
 // Compare Normal Iterators
-template<class Key,
-	class T,
-	class Hash,
-	class KeyEqual,
-	class Allocator>
-inline bool operator==(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& rhs)
-{ return (lhs.ref == rhs.ref) && (lhs.offset == rhs.offset); }
+	template<class Key,
+		class T,
+		class Hash,
+		class KeyEqual,
+		class Allocator>
+	inline bool operator==(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& rhs)
+	{ return (lhs.ref == rhs.ref) && (lhs.offset == rhs.offset); }
 
-template<class Key,
-	class T,
-	class Hash,
-	class KeyEqual,
-	class Allocator>
-inline bool operator!=(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& rhs)
-{ return (lhs.ref != rhs.ref) || (lhs.offset != rhs.offset); }
-// End Compare Normal Iterators
+	template<class Key,
+		class T,
+		class Hash,
+		class KeyEqual,
+		class Allocator>
+	inline bool operator!=(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& rhs)
+	{ return (lhs.ref != rhs.ref) || (lhs.offset != rhs.offset); }
+	// End Compare Normal Iterators
 
 // Normal Iterator Member Functions
-template<class Key,
-	class T,
-	class Hash,
-	class KeyEqual,
-	class Allocator>
-typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator=(
-		const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& other)
-{
-	this->ref = other.ref;
-	this->offset = other.offset;
-	return *this;
-}
+	template<class Key,
+		class T,
+		class Hash,
+		class KeyEqual,
+		class Allocator>
+	typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator=(
+			const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& other)
+	{
+		this->ref = other.ref;
+		this->offset = other.offset;
+		return *this;
+	}
 
-template<class Key,
-	class T,
-	class Hash,
-	class KeyEqual,
-	class Allocator>
-typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator++()
-{
-	(this->offset)++;
-	return *this;
-}
+	template<class Key,
+		class T,
+		class Hash,
+		class KeyEqual,
+		class Allocator>
+	typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator++()
+	{
+		(this->offset)++;
+		return *this;
+	}
 
-template<class Key,
-	class T,
-	class Hash,
-	class KeyEqual,
-	class Allocator>
-typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator++(int)
-{
-	iterator tmp(*this);
-	(this->offset)++;
-	return tmp;
-}
+	template<class Key,
+		class T,
+		class Hash,
+		class KeyEqual,
+		class Allocator>
+	typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator++(int)
+	{
+		iterator tmp(*this);
+		(this->offset)++;
+		return tmp;
+	}
 
-template<class Key,
-	class T,
-	class Hash,
-	class KeyEqual,
-	class Allocator>
-inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::pointer hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator->() const
-{
-	return (ref + (offset * sizeof(hashTable<Key, T, Hash, KeyEqual, Allocator>::hashNode*) ) );
-}
+	template<class Key,
+		class T,
+		class Hash,
+		class KeyEqual,
+		class Allocator>
+	inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::pointer hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator->() const
+	{
+		return (ref + (offset * sizeof(hashTable<Key, T, Hash, KeyEqual, Allocator>::hashNode*) ) );
+	}
 
-template<class Key,
-	class T,
-	class Hash,
-	class KeyEqual,
-	class Allocator>
-inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::reference hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator*() const
-{
-	return (ref[offset]);
-}
-// End Normal Iterator Member Functions
+	template<class Key,
+		class T,
+		class Hash,
+		class KeyEqual,
+		class Allocator>
+	inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::reference hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator*() const
+	{
+		return *(ref + offset);
+	}
+	// End Normal Iterator Member Functions
+// End Iterator
 
 // Const Iterator
 template<class Key,
@@ -441,7 +442,21 @@ public:
 private:
 	hashNode const** ref;
 	hashTable::size_type offset;
-}; // End Const Iterator
+};
+
+// Const Iterator Comparators
+	template<class Key,
+		class T,
+		class Hash,
+		class KeyEqual,
+		class Allocator>
+	inline bool operator==(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator& rhs)
+	{
+		return (lhs.ref == rhs.ref) && (lhs.offset == rhs.offset);
+	}
+	// End Const Iterator Comparators
+
+// End Const Iterator
 
 template<class Key,
 	class T,
