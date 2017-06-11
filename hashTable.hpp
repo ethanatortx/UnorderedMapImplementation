@@ -4,13 +4,13 @@
 #include <functional>
 #include <iterator>
 #include <memory>
-#include "utility.hpp"
+#include <utility>
 
 template<class Key,
 	class T = Key,
 	class Hash = std::hash<Key>,
 	class KeyEqual = std::equal_to<Key>,
-	class Allocator = std::allocator<pair<const Key, T> >
+	class Allocator = std::allocator<std::pair<const Key, T> >
 > class hashTable
 {
 	struct hashNode;
@@ -19,7 +19,7 @@ public:
 
 	typedef Key key_type;
 	typedef T mapped_type;
-	typedef pair<const Key, T> value_type;
+	typedef std::pair<const Key, T> value_type;
 	typedef std::size_t size_type;
 	typedef std::ptrdiff_t difference_type;
 	typedef Hash hasher;
@@ -125,9 +125,9 @@ public:
 	void clear() noexcept;
 
 	// TODO
-	pair<iterator, bool> insert(const value_type& value);
+	std::pair<iterator, bool> insert(const value_type& value);
 	template<class P>
-	pair<iterator, bool> insert(P&& value);
+	std::pair<iterator, bool> insert(P&& value);
 
 	// insert with hint for start
 	iterator insert(const_iterator hint, const value_type& value);
@@ -140,9 +140,9 @@ public:
 
 	// TODO
 	template <class M>
-	pair<iterator, bool> insert_or_assign(const key_type& k, M&& obj);
+	std::pair<iterator, bool> insert_or_assign(const key_type& k, M&& obj);
 	template <class M>
-	pair<iterator, bool> insert_or_assign(key_type&& k, M&& obj);
+	std::pair<iterator, bool> insert_or_assign(key_type&& k, M&& obj);
 	template <class M>
 	iterator insert_or_assign(const_iterator hint, const key_type& k, M&& obj);
 	template <class M>
@@ -150,15 +150,15 @@ public:
 
 	// TODO
 	template<class... Args>
-	pair<iterator, bool> emplace(Args&&... args);
+	std::pair<iterator, bool> emplace(Args&&... args);
 	// TODO
 	template<class... Args>
 	iterator emplace(const_iterator hint, Args&&... args);
 	// TODO
 	template <class... Args>
-	pair<iterator, bool> try_emplace(const key_type& k, Args&&... args);
+	std::pair<iterator, bool> try_emplace(const key_type& k, Args&&... args);
 	template <class... Args>
-	pair<iterator, bool> try_emplace(key_type&& k, Args&&... args);
+	std::pair<iterator, bool> try_emplace(key_type&& k, Args&&... args);
 	template <class... Args>
 	iterator try_emplace(const_iterator hint, const key_type& k, Args&&... args);
 	template <class... Args>
@@ -187,8 +187,8 @@ public:
 	const_iterator find(const key_type& key) const;
 
 	// TODO
-	pair<iterator, iterator> equal_range(const key_type& key);
-	pair<const_iterator, const_iterator> equal_range(const key_type& key) const;
+	std::pair<iterator, iterator> equal_range(const key_type& key);
+	std::pair<const_iterator, const_iterator> equal_range(const key_type& key) const;
 
 	// BUCKET INTERFACE
 		// TODO
@@ -249,29 +249,6 @@ private:
 	float __desired_load_factor;
 };
 
-
-
-
-/*
-	Hash Node Definition [hashTable::hashNode]:
-		A hash node has four constructors to handle all
- 		four construction cases:
-			default 				(0 args)
-			only next pointer 		(1 args)
-			only data 				(1 args)
-			next pointer and data 	(2 args)
-
-		There are two data members:
-			[value]:
-				the data contained within this node;
-				Type is defined as value type of 
-					hash table;
-			[next]:
-				pointer to next node in bucket;
-				Each node pointer is a null-terminated
-					singly linked list;
-*/
-
 template<class Key,
 	class T,
 	class Hash,
@@ -288,34 +265,42 @@ struct hashTable<Key, T, Hash, KeyEqual, Allocator>::hashNode
 	constexpr explicit hashNode(hashNode* __next_, typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type __val_)
 		: next(__next_), value(__val_) {}
 	
+	template<class UKey,
+		class UT,
+		class UHash,
+		class UKeyEqual,
+		class UAllocator>
+		friend bool operator==(const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::hashNode& lhs, const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::hashNode& rhs);
+	template<class UKey,
+		class UT,
+		class UHash,
+		class UKeyEqual,
+		class UAllocator>
+		friend bool operator!=(const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::hashNode& lhs, const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::hashNode& rhs);
+
 	hashNode* next;
-	hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type value;
+	typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type value;
 };
 
-/*
-	Iterator Definition [hashTable::iterator]:
-		The top-level iterator contains three constructors:
-			default 						(0 args)
-			only reference pointer 			(1 args)
-			reference pointer and offset	(2 args)
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline bool operator==(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::hashNode & lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::hashNode & rhs)
+{
+	return false;
+}
 
-		There are two data members:
-			[ref]:
-				Internal reference to hashNode array
-					of the hashTable this iterator is
-					connected to;
-			[offset]:
-				Index of array that iterator is currently
-					referencing;
-				Type defined as size type of hashTable;
-*/
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline bool operator!=(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::hashNode & lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::hashNode & rhs)
+{
+	return false;
+}
+
 template<class Key,
 	class T,
 	class Hash,
 	class KeyEqual,
 	class Allocator>
 class hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator
-	: std::iterator<std::forward_iterator_tag, hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
+	: std::iterator<std::forward_iterator_tag, typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
 {
 public:
 	using value_type = 
@@ -329,7 +314,7 @@ public:
 	constexpr iterator(hashNode** __ref_)
 		: iterator(__ref_, 0) {}
 	constexpr explicit iterator(hashNode** __ref_,
-		hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type __off_)
+		typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type __off_)
 		: ref(__ref_), offset(__off_) {}
 
 	iterator& operator=(const iterator& other);
@@ -352,7 +337,7 @@ public:
 	friend bool operator!=(const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::iterator& lhs, const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::iterator& rhs);
 private:
 	hashNode** ref;
-	hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type offset;
+	typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type offset;
 };
 
 template<class Key,
@@ -436,7 +421,7 @@ template<class Key,
 	class KeyEqual,
 	class Allocator>
 class hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator
-	: std::iterator<std::forward_iterator_tag, hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
+	: std::iterator<std::forward_iterator_tag, typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
 {
 public:
 	using value_type = 
@@ -449,7 +434,7 @@ public:
 		: const_iterator(NULL, 0) {}
 	constexpr const_iterator(hashNode const** __ref_)
 		: const_iterator(__ref_, 0) {}
-	constexpr explicit const_iterator(hashNode const** __ref_, hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type __off_)
+	constexpr explicit const_iterator(hashNode const** __ref_, typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type __off_)
 		: ref(__ref_), offset(__off_) {}
 
 	const_iterator& operator=(const const_iterator& other);
@@ -473,7 +458,7 @@ public:
 
 private:
 	hashNode const** ref;
-	hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type offset;
+	typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type offset;
 };
 
 template<class Key,
@@ -557,7 +542,7 @@ template<class Key,
 	class KeyEqual,
 	class Allocator>
 class hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator
-	: std::iterator<std::forward_iterator_tag, hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
+	: std::iterator<std::forward_iterator_tag, typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
 {
 public:
 	using value_type =
@@ -675,7 +660,7 @@ template<class Key,
 	class KeyEqual,
 	class Allocator>
 class hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator
-	: std::iterator<std::forward_iterator_tag, hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
+	: std::iterator<std::forward_iterator_tag, typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
 {
 public:
 	using value_type =
@@ -788,4 +773,415 @@ constexpr bool operator!=(const typename hashTable<Key, T, Hash, KeyEqual, Alloc
 	return (lhs.ref != rhs.ref);
 }
 
-#endif // __HASH__TABLE_H_
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline hashTable<Key, T, Hash, KeyEqual, Allocator>::hashTable(size_type bucket_count, const Hash & hash, const KeyEqual & equal, const Allocator & alloc)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline hashTable<Key, T, Hash, KeyEqual, Allocator>::hashTable(const Allocator & alloc)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline hashTable<Key, T, Hash, KeyEqual, Allocator>::hashTable(const hashTable & other)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline hashTable<Key, T, Hash, KeyEqual, Allocator>::hashTable(const hashTable & other, const Allocator & alloc)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline hashTable<Key, T, Hash, KeyEqual, Allocator>::hashTable(hashTable && other)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline hashTable<Key, T, Hash, KeyEqual, Allocator>::hashTable(hashTable && other, const Allocator & alloc)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline hashTable<Key, T, Hash, KeyEqual, Allocator>::hashTable(std::initializer_list<value_type> init, size_type bucket_count, const Hash & hash, const KeyEqual & equal, const Allocator & alloc)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class InputIt>
+inline hashTable<Key, T, Hash, KeyEqual, Allocator>::hashTable(InputIt first, InputIt last, size_type bucket_count, const Hash & hash, const KeyEqual & equal, const Allocator & alloc)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline hashTable<Key, T, Hash, KeyEqual, Allocator> & hashTable<Key, T, Hash, KeyEqual, Allocator>::operator=(const hashTable & other)
+{
+	// TODO: insert return statement here
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::begin() noexcept
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::begin() const noexcept
+{
+	return const_iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::cbegin() const noexcept
+{
+	return const_iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::end()
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::end() const
+{
+	return const_iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::cend() const
+{
+	return const_iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline bool hashTable<Key, T, Hash, KeyEqual, Allocator>::empty() const noexcept
+{
+	return false;
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type hashTable<Key, T, Hash, KeyEqual, Allocator>::size() const noexcept
+{
+	return size_type();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type hashTable<Key, T, Hash, KeyEqual, Allocator>::max_size() const noexcept
+{
+	return size_type();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline void hashTable<Key, T, Hash, KeyEqual, Allocator>::clear() noexcept
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline std::pair<typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator, bool> hashTable<Key, T, Hash, KeyEqual, Allocator>::insert(const value_type & value)
+{
+	return std::pair<typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator, bool>();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class P>
+inline std::pair<typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator, bool> hashTable<Key, T, Hash, KeyEqual, Allocator>::insert(P && value)
+{
+	return std::pair<iterator, bool>();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::insert(const_iterator hint, const value_type & value)
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class P>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::insert(const_iterator hint, P && value)
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class InputIt>
+inline void hashTable<Key, T, Hash, KeyEqual, Allocator>::insert(InputIt first, InputIt last)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline void hashTable<Key, T, Hash, KeyEqual, Allocator>::insert(std::initializer_list<value_type> ilist)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class M>
+inline std::pair<typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator, bool> hashTable<Key, T, Hash, KeyEqual, Allocator>::insert_or_assign(const key_type & k, M && obj)
+{
+	return std::pair<iterator, bool>();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class M>
+inline std::pair<typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator, bool> hashTable<Key, T, Hash, KeyEqual, Allocator>::insert_or_assign(key_type && k, M && obj)
+{
+	return std::pair<iterator, bool>();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class M>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::insert_or_assign(const_iterator hint, const key_type & k, M && obj)
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class M>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::insert_or_assign(const_iterator hint, key_type && k, M && obj)
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class ...Args>
+inline std::pair<typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator, bool> hashTable<Key, T, Hash, KeyEqual, Allocator>::emplace(Args && ...args)
+{
+	return std::pair<iterator, bool>();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class ...Args>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::emplace(const_iterator hint, Args && ...args)
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class ...Args>
+inline std::pair<typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator, bool> hashTable<Key, T, Hash, KeyEqual, Allocator>::try_emplace(const key_type & k, Args && ...args)
+{
+	return std::pair<iterator, bool>();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class ...Args>
+inline std::pair<typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator, bool> hashTable<Key, T, Hash, KeyEqual, Allocator>::try_emplace(key_type && k, Args && ...args)
+{
+	return std::pair<iterator, bool>();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class ...Args>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::try_emplace(const_iterator hint, const key_type & k, Args && ...args)
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+template<class ...Args>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::try_emplace(const_iterator hint, key_type && k, Args && ...args)
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::erase(const_iterator pos)
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::erase(const_iterator first, const_iterator last)
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type hashTable<Key, T, Hash, KeyEqual, Allocator>::erase(const key_type & key)
+{
+	return size_type();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline void hashTable<Key, T, Hash, KeyEqual, Allocator>::swap(hashTable & other)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::mapped_type & hashTable<Key, T, Hash, KeyEqual, Allocator>::at(const key_type & key)
+{
+	// TODO: insert return statement here
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::mapped_type & hashTable<Key, T, Hash, KeyEqual, Allocator>::at(const key_type & key) const
+{
+	// TODO: insert return statement here
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::mapped_type & hashTable<Key, T, Hash, KeyEqual, Allocator>::operator[](const key_type & key)
+{
+	// TODO: insert return statement here
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::mapped_type & hashTable<Key, T, Hash, KeyEqual, Allocator>::operator[](key_type && key)
+{
+	// TODO: insert return statement here
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type hashTable<Key, T, Hash, KeyEqual, Allocator>::count(const key_type & key) const
+{
+	return size_type();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::find(const key_type & key)
+{
+	return iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::find(const key_type & key) const
+{
+	return const_iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline std::pair<typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator, typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator> hashTable<Key, T, Hash, KeyEqual, Allocator>::equal_range(const key_type & key)
+{
+	return std::pair<iterator, iterator>();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline std::pair<typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator, typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator> hashTable<Key, T, Hash, KeyEqual, Allocator>::equal_range(const key_type & key) const
+{
+	return std::pair<const_iterator, const_iterator>();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::begin(size_type n)
+{
+	return local_iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::begin(size_type n) const
+{
+	return const_local_iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::cbegin(size_type n) const
+{
+	return const_local_iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::end(size_type n)
+{
+	return local_iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::end(size_type n) const
+{
+	return const_local_iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::cend(size_type n) const
+{
+	return const_local_iterator();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type hashTable<Key, T, Hash, KeyEqual, Allocator>::bucket_count() const
+{
+	return size_type();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type hashTable<Key, T, Hash, KeyEqual, Allocator>::max_bucket_count() const
+{
+	return size_type();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type hashTable<Key, T, Hash, KeyEqual, Allocator>::bucket_size(size_type n) const
+{
+	return size_type();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type hashTable<Key, T, Hash, KeyEqual, Allocator>::bucket(const key_type & key) const
+{
+	return size_type();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline float hashTable<Key, T, Hash, KeyEqual, Allocator>::load_factor() const
+{
+	return 0.0f;
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline float hashTable<Key, T, Hash, KeyEqual, Allocator>::max_load_factor() const
+{
+	return 0.0f;
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline void hashTable<Key, T, Hash, KeyEqual, Allocator>::max_load_factor(float ml)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline void hashTable<Key, T, Hash, KeyEqual, Allocator>::rehash(size_type count)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline void hashTable<Key, T, Hash, KeyEqual, Allocator>::reserve(size_type count)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::hasher hashTable<Key, T, Hash, KeyEqual, Allocator>::hash_function() const
+{
+	return hasher();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::key_equal hashTable<Key, T, Hash, KeyEqual, Allocator>::key_eq() const
+{
+	return key_equal();
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator >
+inline bool operator==(hashTable<Key, T, Hash, KeyEqual, Allocator>& lhs, hashTable<Key, T, Hash, KeyEqual, Allocator>& rhs)
+{
+	return false;
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator >
+inline bool operator!=(hashTable<Key, T, Hash, KeyEqual, Allocator>& lhs, hashTable<Key, T, Hash, KeyEqual, Allocator>& rhs)
+{
+	return false;
+}
+
+template<class UKey, class U, class UHash, class UKeyEqual, class UAllocator>
+inline void swap(hashTable<UKey, U, UHash, UKeyEqual, UAllocator>& lhs, hashTable<UKey, U, UHash, UKeyEqual, UAllocator>& rhs)
+{
+}
+
+template<class Key, class T, class Hash, class KeyEqual, class Allocator>
+inline hashTable<Key, T, Hash, KeyEqual, Allocator>::~hashTable()
+{
+}
+
+#endif
