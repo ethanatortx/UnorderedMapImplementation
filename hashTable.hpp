@@ -1,9 +1,9 @@
 #ifndef __HASH__TABLE_H_
 #define __HASH__TABLE_H_
 
+#include <functional>
 #include <iterator>
 #include <memory>
-#include <functional>
 #include "utility.hpp"
 
 template<class Key,
@@ -249,5 +249,543 @@ private:
 	float __desired_load_factor;
 };
 
+
+
+
+/*
+	Hash Node Definition [hashTable::hashNode]:
+		A hash node has four constructors to handle all
+ 		four construction cases:
+			default 				(0 args)
+			only next pointer 		(1 args)
+			only data 				(1 args)
+			next pointer and data 	(2 args)
+
+		There are two data members:
+			[value]:
+				the data contained within this node;
+				Type is defined as value type of 
+					hash table;
+			[next]:
+				pointer to next node in bucket;
+				Each node pointer is a null-terminated
+					singly linked list;
+*/
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+struct hashTable<Key, T, Hash, KeyEqual, Allocator>::hashNode
+{
+	constexpr hashNode()
+		: hashNode(NULL, typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type()) {}
+	constexpr hashNode(hashNode* __next_)
+		: hashNode(__next_, typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type()) {}
+	constexpr hashNode(typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type __val_)
+		: hashNode(NULL, __val_) {}
+	constexpr explicit hashNode(hashNode* __next_, typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type __val_)
+		: next(__next_), value(__val_) {}
+	
+	hashNode* next;
+	hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type value;
+};
+
+/*
+	Iterator Definition [hashTable::iterator]:
+		The top-level iterator contains three constructors:
+			default 						(0 args)
+			only reference pointer 			(1 args)
+			reference pointer and offset	(2 args)
+
+		There are two data members:
+			[ref]:
+				Internal reference to hashNode array
+					of the hashTable this iterator is
+					connected to;
+			[offset]:
+				Index of array that iterator is currently
+					referencing;
+				Type defined as size type of hashTable;
+*/
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+class hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator
+	: std::iterator<std::forward_iterator_tag, hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
+{
+public:
+	using value_type = 
+		typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type;
+	typedef value_type* pointer;
+	typedef value_type& reference;
+	typedef value_type const& const_reference;
+
+	constexpr iterator()
+		: iterator(NULL, 0) {}
+	constexpr iterator(hashNode** __ref_)
+		: iterator(__ref_, 0) {}
+	constexpr explicit iterator(hashNode** __ref_,
+		hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type __off_)
+		: ref(__ref_), offset(__off_) {}
+
+	iterator& operator=(const iterator& other);
+	iterator& operator++();
+	iterator operator++(int);
+	pointer operator->() const;
+	reference operator*() const;
+
+	template<class UKey,
+		class UT,
+		class UHash,
+		class UKeyEqual,
+		class UAllocator>
+	friend bool operator==(const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::iterator& lhs, const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::iterator& rhs);
+	template<class UKey,
+		class UT,
+		class UHash,
+		class UKeyEqual,
+		class UAllocator>
+	friend bool operator!=(const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::iterator& lhs, const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::iterator& rhs);
+private:
+	hashNode** ref;
+	hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type offset;
+};
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator=(const iterator& other)
+{
+	this->ref = other.ref;
+	this->offset = other.offset;
+	return *this;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator++()
+{
+	++offset;
+	return *this;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator++(int)
+{
+	iterator tmp(*this);
+	++offset;
+	return tmp;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::pointer hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator->() const
+{
+	return &((*(ref + offset))->value);
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::reference hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator::operator*() const
+{
+	return ((*(ref + offset))->value);
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+constexpr bool operator==(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& rhs)
+{
+	return ((lhs.ref == rhs.ref) && (lhs.offset == rhs.offset));
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+constexpr bool operator!=(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::iterator& rhs)
+{
+	return ((lhs.ref != rhs.ref) || (lhs.offset != rhs.offset));
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+class hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator
+	: std::iterator<std::forward_iterator_tag, hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
+{
+public:
+	using value_type = 
+		typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type;
+	typedef value_type const* pointer;
+	typedef value_type const& reference;
+	typedef value_type const& const_reference;
+
+	constexpr const_iterator()
+		: const_iterator(NULL, 0) {}
+	constexpr const_iterator(hashNode const** __ref_)
+		: const_iterator(__ref_, 0) {}
+	constexpr explicit const_iterator(hashNode const** __ref_, hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type __off_)
+		: ref(__ref_), offset(__off_) {}
+
+	const_iterator& operator=(const const_iterator& other);
+	const_iterator& operator++();
+	const_iterator operator++(int);
+	pointer operator->() const;
+	reference operator*() const;
+
+	template<class UKey,
+		class UT,
+		class UHash,
+		class UKeyEqual,
+		class UAllocator>
+	friend bool operator==(const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::const_iterator& lhs, const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::const_iterator& rhs);
+	template<class UKey,
+		class UT,
+		class UHash,
+		class UKeyEqual,
+		class UAllocator>
+	friend bool operator!=(const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::const_iterator& lhs, const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::const_iterator& rhs);
+
+private:
+	hashNode const** ref;
+	hashTable<Key, T, Hash, KeyEqual, Allocator>::size_type offset;
+};
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator::operator=(const const_iterator& other)
+{
+	this->ref = other.ref;
+	this->offset = other.offset;
+	return *this;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator::operator++()
+{
+	++offset;
+	return *this;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator::operator++(int)
+{
+	const_iterator tmp(*this);
+	++offset;
+	return tmp;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator::pointer hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator::operator->() const
+{
+	return &((*(ref + offset))->value);
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator::reference hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator::operator*() const
+{
+	return ((*(ref + offset))->value);
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+constexpr bool operator==(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator& rhs)
+{
+	return ((lhs.ref == rhs.ref) && (lhs.offset == rhs.offset));
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+constexpr bool operator!=(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_iterator& rhs)
+{
+	return ((lhs.ref != rhs.ref) || (lhs.offset != rhs.offset));
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+class hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator
+	: std::iterator<std::forward_iterator_tag, hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
+{
+public:
+	using value_type =
+		typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type;
+	typedef value_type* pointer;
+	typedef value_type& reference;
+	typedef value_type const& const_reference;
+
+	constexpr local_iterator()
+		: local_iterator(NULL) {}
+	constexpr explicit local_iterator(hashNode* __ref_)
+		: ref(__ref_) {}
+
+	local_iterator& operator=(const local_iterator& other);
+	local_iterator& operator++();
+	local_iterator operator++(int);
+	pointer operator->() const;
+	reference operator*() const;
+
+	template<class UKey,
+		class UT,
+		class UHash,
+		class UKeyEqual,
+		class UAllocator>
+	friend bool operator==(const local_iterator& lhs, const local_iterator& rhs);
+	template<class UKey,
+		class UT,
+		class UHash,
+		class UKeyEqual,
+		class UAllocator>
+	friend bool operator!=(const local_iterator& lhs, const local_iterator& rhs);
+private:
+	hashNode* ref;
+};
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator::operator=(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator& other)
+{
+	this->ref = other.ref;
+	return *this;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator::operator++()
+{
+	if(ref)
+		ref = ref->next;
+	return *this;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator::operator++(int)
+{
+	local_iterator tmp(*this);
+	if(ref)
+		ref = ref->next;
+	return tmp;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator::pointer hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator::operator->() const
+{
+	return &(ref->value);
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator::reference hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator::operator*() const
+{
+	return (ref->value);
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+constexpr bool operator==(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator& rhs)
+{
+	return (lhs.ref == rhs.ref);
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+constexpr bool operator!=(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator& rhs)
+{
+	return (lhs.ref != rhs.ref);
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+class hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator
+	: std::iterator<std::forward_iterator_tag, hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type>
+{
+public:
+	using value_type =
+		typename hashTable<Key, T, Hash, KeyEqual, Allocator>::value_type;
+	typedef value_type const* pointer;
+	typedef value_type const& reference;
+	typedef value_type const& const_reference;
+
+	constexpr const_local_iterator()
+		: local_iterator(NULL) {}
+	constexpr explicit const_local_iterator(hashNode const* __ref_)
+		: ref(__ref_) {}
+
+	const_local_iterator& operator=(const local_iterator& other);
+	const_local_iterator& operator++();
+	const_local_iterator operator++(int);
+	pointer operator->() const;
+	reference operator*() const;
+
+	template<class UKey,
+		class UT,
+		class UHash,
+		class UKeyEqual,
+		class UAllocator>
+	friend bool operator==(const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::local_iterator& lhs, const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::local_iterator& rhs);
+	template<class UKey,
+		class UT,
+		class UHash,
+		class UKeyEqual,
+		class UAllocator>
+	friend bool operator!=(const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::local_iterator& lhs, const typename hashTable<UKey, UT, UHash, UKeyEqual, UAllocator>::local_iterator& rhs);
+private:
+	hashNode const* ref;
+};
+
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator::operator=(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::local_iterator& other)
+{
+	this->ref = other.ref;
+	return *this;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator& hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator::operator++()
+{
+	if(ref)
+		ref = ref->next;
+	return *this;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator::operator++(int)
+{
+	const_local_iterator tmp(*this);
+	if(ref)
+		ref = ref->next;
+	return tmp;
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator::pointer hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator::operator->() const
+{
+	return &(ref->value);
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+inline typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator::reference hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator::operator*() const
+{
+	return (ref->value);
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+constexpr bool operator==(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator& rhs)
+{
+	return (lhs.ref == rhs.ref);
+}
+
+template<class Key,
+	class T,
+	class Hash,
+	class KeyEqual,
+	class Allocator>
+constexpr bool operator!=(const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator& lhs, const typename hashTable<Key, T, Hash, KeyEqual, Allocator>::const_local_iterator& rhs)
+{
+	return (lhs.ref != rhs.ref);
+}
 
 #endif // __HASH__TABLE_H_
